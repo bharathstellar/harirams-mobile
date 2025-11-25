@@ -298,7 +298,11 @@ export default function CustomerDetails() {
               placeholder="Enter Customer Name"
               placeholderTextColor="#666"
               value={formData.name}
-              onChangeText={(text) => handleInputChange('name', text)}
+              onChangeText={(text) => {
+                // Only allow letters and spaces, no numbers or symbols
+                const onlyText = text.replace(/[^A-Za-z\s]/g, '');
+                handleInputChange('name', onlyText);
+              }}
             />
           </View>
 

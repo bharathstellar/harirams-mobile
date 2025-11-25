@@ -3,14 +3,12 @@ import { clearAllStoredData, isAdmin } from '@/utils/userRole';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   BackHandler,
   Image,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,7 +33,7 @@ export default function BookingSummary() {
         // Prevent going back after booking confirmation
         return true;
       });
-
+      
       return () => backHandler.remove();
     }
   }, [bookingConfirmed]);
@@ -153,8 +151,10 @@ export default function BookingSummary() {
       setBookingConfirmed(true);
 
       // Reset booking state - clear all stored data
-      dispatch(resetBooking());
-      
+      setTimeout(() => {
+        dispatch(resetBooking());
+      }, 3000);
+
       // Clear all stored values from AsyncStorage
       await clearAllStoredData();
 
@@ -178,6 +178,7 @@ export default function BookingSummary() {
       setLoading(false);
     }
   };
+
 
   const pendingAmount = (totalAmount || 0) - (advanceAmount || 0);
 
@@ -236,11 +237,27 @@ export default function BookingSummary() {
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Check-in:</Text>
-              <Text style={styles.infoValue}>{checkInDate || '-'}</Text>
+              <Text style={styles.infoValue}>
+                {checkInDate ? (() => {
+                  const date = new Date(checkInDate);
+                  const day = date.getDate();
+                  const month = date.getMonth() + 1;
+                  const year = date.getFullYear();
+                  return `${day}/${month}/${year}`;
+                })() : '-'}
+              </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Check-out:</Text>
-              <Text style={styles.infoValue}>{checkOutDate || '-'}</Text>
+              <Text style={styles.infoValue}>
+                {checkOutDate ? (() => {
+                  const date = new Date(checkOutDate);
+                  const day = date.getDate();
+                  const month = date.getMonth() + 1;
+                  const year = date.getFullYear();
+                  return `${day}/${month}/${year}`;
+                })() : '-'}
+              </Text>
             </View>
           </View>
 

@@ -76,10 +76,8 @@ export default function CheckoutSummary() {
       const data = await getBookingForCheckout(bookingId);
       if (data.success && data.booking) {
         setBooking(data.booking);
-        // Pre-fill pending collected with pending amount
-        if (data.booking.pending_amount) {
-          setPendingCollected(String(data.booking.pending_amount));
-        }
+        // Pre-fill pending collected with pending amount (including 0)
+        setPendingCollected(String(data.booking.pending_amount || 0));
       } else {
         setError(data.message || 'Failed to load booking details');
       }

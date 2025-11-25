@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-    BASE_URL: 'http://192.168.1.16:3001/v1/api',
+    BASE_URL: 'http://192.168.1.7:3001/v1/api',
   // BASE_URL: 'https://hariramsapi-f8ccetawf7hdcqdh.centralus-01.azurewebsites.net/v1/api',
   ENDPOINTS: {
     //tenents

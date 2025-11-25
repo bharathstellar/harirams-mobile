@@ -2,36 +2,37 @@
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  BackHandler,
-  FlatList,
-  Image,
-  KeyboardAvoidingView,
-  Linking,
-  Modal,
-  Platform,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    BackHandler,
+    FlatList,
+    Image,
+    KeyboardAvoidingView,
+    Linking,
+    Modal,
+    Platform,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import PageHeader from "../components/PageHeader";
 import { RevenueSection } from "../components/RevenueSection";
 import {
-  cancelBooking,
-  getBookingHistory,
-  getCurrentBookings,
-  getDashboardOverview,
-  getFutureAndCheckinBookings,
-  getOccupancyDashboard,
-  getPastBookings,
-  getRevenueDashboard
+    cancelBooking,
+    getBookingHistory,
+    getCurrentBookings,
+    getDashboardOverview,
+    getFutureAndCheckinBookings,
+    getOccupancyDashboard,
+    getPastBookings,
+    getRevenueDashboard
 } from "../utils/api";
 
 type Booking = {
@@ -233,8 +234,11 @@ export default function AdminDashboard() {
 
   // Fetch past bookings using booking history API
   const fetchPastBookings = useCallback(
-    async (page = pastPage, silent = false) => {
-      if (!silent) setLoadingPast(true);
+    async (page: number, silent = false) => {
+      if (!silent) {
+        setLoadingPast(true);
+        setError(null); // Clear previous errors
+      }
       try {
         // Format month as YYYY-MM if provided
         const monthParam = pastMonth ? pastMonth : undefined;
@@ -277,9 +281,29 @@ export default function AdminDashboard() {
               hasPrevPage: historyJson.pagination.hasPreviousPage || false,
             } as PaginationInfo);
           }
+        } else {
+          // If API returns success: false, show error
+          const errorMsg = historyJson.message || 'Failed to fetch booking history';
+          setError(errorMsg);
+          if (!silent) {
+            Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: errorMsg,
+            });
+          }
         }
       } catch (e: any) {
         console.error('Failed to fetch booking history:', e);
+        const errorMsg = e?.message || 'Failed to fetch booking history';
+        setError(errorMsg);
+        if (!silent) {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: errorMsg,
+          });
+        }
         // Fallback to old API if new one fails
         try {
           const pastJson = await getPastBookings(page, pastSearch || undefined, pastMonth || undefined);
@@ -287,14 +311,24 @@ export default function AdminDashboard() {
           if (pastJson.paginationInfo) {
             setPastPagination(pastJson.paginationInfo as PaginationInfo);
           }
+          // Clear error if fallback succeeds
+          setError(null);
         } catch (err: any) {
-          setError(err?.message ?? "Something went wrong");
+          const fallbackError = err?.message ?? "Something went wrong";
+          setError(fallbackError);
+          if (!silent) {
+            Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: fallbackError,
+            });
+          }
         }
       } finally {
         if (!silent) setLoadingPast(false);
       }
     },
-    [pastSearch, pastMonth, pastPage]
+    [pastSearch, pastMonth]
   );
 
   // Fetch overview (optional - may not be available)
@@ -387,7 +421,7 @@ export default function AdminDashboard() {
       fetchPastBookings(1);
     }, 500);
     return () => clearTimeout(delayDebounce);
-  }, [pastSearch, pastMonth]);
+  }, [pastSearch, pastMonth, fetchPastBookings]);
 
   useEffect(() => {
     fetchPastBookings(pastPage);

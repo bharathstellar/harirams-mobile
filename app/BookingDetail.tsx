@@ -376,7 +376,10 @@ export default function BookingDetail() {
                     placeholder="Enter guest name"
                     placeholderTextColor="#999"
                     value={guestForm.guest_name}
-                    onChangeText={(value) => handleInputChange('guest_name', value)}
+                    onChangeText={(value) => {
+                      const onlyAlpha = value.replace(/[^A-Za-z ]/g, "");
+                      handleInputChange('guest_name', onlyAlpha);
+                    }}
                     maxLength={150}
                   />
                 </View>

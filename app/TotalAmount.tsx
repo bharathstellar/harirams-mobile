@@ -142,7 +142,7 @@ export default function TotalAmount() {
                   return;
                 } else {
                   setAdvanceError('');
-                  setAdvanceAmountLocal(cleaned);
+                setAdvanceAmountLocal(cleaned);
                 }
               }}
             />

@@ -150,7 +150,7 @@ export default function StaffDashboard() {
             onPress={() => router.push('/BookingsList')}
           >
             <MaterialCommunityIcons name="book-open-variant" size={40} color="#FFFFFF" />
-            <Text style={styles.buttonText}>Bookings</Text>
+            <Text style={styles.buttonText}>Checkin Bookings</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -158,7 +158,7 @@ export default function StaffDashboard() {
             onPress={() => router.push('/PendingPayments')}
           >
             <MaterialCommunityIcons name="cash-register" size={40} color="#FFFFFF" />
-            <Text style={styles.buttonText}>Checkout</Text>
+            <Text style={styles.buttonText}>Checkout Bookings</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -204,6 +204,11 @@ export default function BookingsList() {
         return '-';
       }
     };
+    const capitalizeFirst = (str:any) => {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    };
+    
 
     return (
       <TouchableOpacity
@@ -215,7 +220,7 @@ export default function BookingsList() {
         <View style={styles.cardHeader}>
           <Text style={styles.snoText}>#{String(sno)}</Text>
           <Text style={[styles.statusBadge, item.status === 'future' ? styles.statusPending : styles.statusPaid]}>
-            {String(item.status || 'future')}
+            {String(capitalizeFirst(item.status) || 'Future')}
           </Text>
         </View>
         <Text style={styles.bookingIdText}>Booking ID: {String(item.BookingId || '')}</Text>

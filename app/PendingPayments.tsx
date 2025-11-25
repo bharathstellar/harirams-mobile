@@ -207,6 +207,10 @@ export default function PendingPayments() {
         return '-';
       }
     };
+    const CapitalizeFirst = (str:any) => {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
 
     return (
       <TouchableOpacity
@@ -218,7 +222,7 @@ export default function PendingPayments() {
         <View style={styles.cardHeader}>
           <Text style={styles.snoText}>#{String(sno)}</Text>
           <Text style={[styles.statusBadge, styles.statusCheckedIn]}>
-            {String(item.status || 'checked_in')}
+            {String(CapitalizeFirst(item.status) || 'Checked In')}
           </Text>
         </View>
         <Text style={styles.bookingIdText}>Booking ID: {String(item.BookingId || '')}</Text>

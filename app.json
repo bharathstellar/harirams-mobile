@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "Harirams Hemhalayaah",
+    "slug": "harirams",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/harirams_logo.png",
+    "scheme": "harirams",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/harirams_logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff",
+      "dark": {
+        "backgroundColor": "#000000"
+      }
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Harirams to use the camera to take photos of documents and vehicles.",
+        "NSPhotoLibraryUsageDescription": "Allow Harirams to access your photo library to select images.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.bharathstellar.harirams"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/harirams_logo.png",
+        "backgroundImage": "./assets/harirams_logo.png",
+        "backgroundColor": "#E6F4FE"
+      },
+      "icon": "./assets/harirams_logo.png",
+      "package": "com.bharathstellar.harirams",
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
+      ],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/harirams_logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-splash-screen"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e81c4174-970a-49ea-ba81-bcb3e407a351"
+      }
+    }
+  }
+}

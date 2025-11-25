@@ -1,0 +1,38 @@
+{
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "internal"
+    },
+    "releaseApk": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "store"
+    },
+    "releaseAab": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "distribution": "store"
+    },
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "internal": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "internal"
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "distribution": "store"
+    }
+  }
+}

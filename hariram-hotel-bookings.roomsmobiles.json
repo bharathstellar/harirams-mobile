@@ -1,0 +1,210 @@
+[{
+  "_id": {
+    "$oid": "68cbe561473be36110ff95d8"
+  },
+  "RoomNumber": "HRH-1",
+  "Status": "Available",
+  "RoomId": "9f379b2b-3030-42a8-99b4-2a2afc6579c4",
+  "createdAt": {
+    "$date": "2025-09-18T10:56:33.837Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T11:31:09.764Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe571473be36110ff95dc"
+  },
+  "RoomNumber": "HRH-2",
+  "Status": "Available",
+  "RoomId": "6184870d-a81f-40d3-9b01-ccd48fe27e13",
+  "createdAt": {
+    "$date": "2025-09-18T10:56:49.676Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T11:31:09.764Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe575473be36110ff95df"
+  },
+  "RoomNumber": "HRH-3",
+  "Status": "Booked",
+  "RoomId": "305bef47-b624-4413-a523-907f038b8711",
+  "createdAt": {
+    "$date": "2025-09-18T10:56:53.693Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T05:39:07.754Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe57b473be36110ff95e2"
+  },
+  "RoomNumber": "HRH-4",
+  "Status": "Booked",
+  "RoomId": "e8e59689-7837-413b-bd7b-024d07aa8c7c",
+  "createdAt": {
+    "$date": "2025-09-18T10:56:59.600Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T05:39:07.754Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe57f473be36110ff95e5"
+  },
+  "RoomNumber": "HRH-5",
+  "Status": "Booked",
+  "RoomId": "f720327c-94b6-47aa-8392-964eb6eb67b5",
+  "createdAt": {
+    "$date": "2025-09-18T10:57:03.456Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T05:39:07.754Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe583473be36110ff95e8"
+  },
+  "RoomNumber": "HRH-6",
+  "Status": "Booked",
+  "RoomId": "eb341010-893a-4c99-9081-d8986c2268a7",
+  "createdAt": {
+    "$date": "2025-09-18T10:57:07.865Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T05:39:07.754Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe588473be36110ff95eb"
+  },
+  "RoomNumber": "HRH-7",
+  "Status": "Booked",
+  "RoomId": "5019ff25-80b8-46bd-bc8e-cc52c87add4c",
+  "createdAt": {
+    "$date": "2025-09-18T10:57:12.689Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T05:39:07.754Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe58c473be36110ff95ee"
+  },
+  "RoomNumber": "HRH-8",
+  "Status": "Booked",
+  "RoomId": "e85c83fc-924a-4109-939d-d03a45c460ec",
+  "createdAt": {
+    "$date": "2025-09-18T10:57:16.746Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T05:39:07.754Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe591473be36110ff95f1"
+  },
+  "RoomNumber": "HRH-9",
+  "Status": "Booked",
+  "RoomId": "3e2117f1-a4b7-481a-a128-e3606d73f34e",
+  "createdAt": {
+    "$date": "2025-09-18T10:57:21.336Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T05:39:07.754Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe599473be36110ff95f4"
+  },
+  "RoomNumber": "HRH-10",
+  "Status": "Booked",
+  "RoomId": "986e04bd-bc95-43d3-a769-a2987f78ba4f",
+  "createdAt": {
+    "$date": "2025-09-18T10:57:29.613Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T05:39:07.754Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe59d473be36110ff95f7"
+  },
+  "RoomNumber": "HRHS1",
+  "Status": "Available",
+  "RoomId": "becda70f-b0b3-4d9a-940b-27b4649f095e",
+  "createdAt": {
+    "$date": "2025-09-18T10:57:33.149Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T10:09:32.853Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "68cbe5a2473be36110ff95fa"
+  },
+  "RoomNumber": "HRHS2",
+  "Status": "Available",
+  "RoomId": "f8af7d8e-ab8a-49f4-b30a-5d0470654310",
+  "createdAt": {
+    "$date": "2025-09-18T10:57:38.738Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T10:09:32.853Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69117a455120aaee58ab4157"
+  },
+  "RoomNumber": "HRH-A",
+  "Status": "Available",
+  "RoomId": "e8f6f631-ecd0-4613-8b80-028dba1766c6",
+  "createdAt": {
+    "$date": "2025-11-10T05:38:13.504Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T10:09:32.853Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "69117a7d5120aaee58ab4178"
+  },
+  "RoomNumber": "HRH-B",
+  "Status": "Available",
+  "RoomId": "6880ab0a-ff9b-4c49-a89d-24dc75d7a4a9",
+  "createdAt": {
+    "$date": "2025-11-10T05:39:09.936Z"
+  },
+  "updatedAt": {
+    "$date": "2025-11-10T10:09:32.853Z"
+  },
+  "__v": 0
+}]

@@ -673,7 +673,7 @@ export default function AdminDashboard() {
               {item.CheckOutDate ? new Date(item.CheckOutDate).toLocaleDateString() : "-"}
             </Text>
             {/* Cancel button for future bookings */}
-            {item.status === 'future' && (
+            {item.status === 'future' ? (
               <View style={[tableStyles.tableCell, { width: columnWidths.cancel, justifyContent: "center", alignItems: "center" }]}>
                 <TouchableOpacity
                   onPress={() => handleCancelBooking(item.BookingId, item.customerName)}
@@ -682,6 +682,10 @@ export default function AdminDashboard() {
                   <Text style={tableStyles.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
+            ) : (
+              <Text style={[tableStyles.tableCell, { width: columnWidths.cancel, textAlign: "center", fontWeight: "500", color: "#43A047" }]}> 
+                {"-"}
+              </Text>
             )}
           </>
         )}

@@ -16,7 +16,6 @@ import {
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 
 type Booking = {
   _id: string;
@@ -136,16 +135,16 @@ export default function BookingsList() {
     try {
       const date = new Date(checkinDate);
       if (isNaN(date.getTime())) return 'others';
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
+
       const checkIn = new Date(date);
       checkIn.setHours(0, 0, 0, 0);
-      
+
       if (checkIn.getTime() === today.getTime()) {
         return 'today';
       } else if (checkIn.getTime() === tomorrow.getTime()) {
@@ -178,8 +177,21 @@ export default function BookingsList() {
     return groups.filter((g) => g.bookings.length > 0);
   }, [bookings]);
 
-  const renderBookingItem = ({ item, index }: { item: Booking; index: number }) => {
-    const sno = pagination ? (pagination.currentPage - 1) * pagination.limit + (index + 1) : index + 1;
+  const flatListData = useMemo(() => {
+    let bookingIndex = 0;
+    const startSno = pagination ? (pagination.currentPage - 1) * pagination.limit : 0;
+
+    return groupedBookings.flatMap((group) => [
+      { type: 'header', category: group.category } as any,
+      ...group.bookings.map((booking) => {
+        bookingIndex++;
+        return { type: 'booking', ...booking, sno: startSno + bookingIndex };
+      }),
+    ]);
+  }, [groupedBookings, pagination]);
+
+  const renderBookingItem = ({ item, index }: { item: any; index: number }) => {
+    const sno = item.sno;
 
     // Helper function to safely get room numbers
     const getRoomNumbers = (): string => {
@@ -204,11 +216,11 @@ export default function BookingsList() {
         return '-';
       }
     };
-    const capitalizeFirst = (str:any) => {
+    const capitalizeFirst = (str: any) => {
       if (!str) return "";
       return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     };
-    
+
 
     return (
       <TouchableOpacity
@@ -291,10 +303,7 @@ export default function BookingsList() {
         ) : (
           <>
             <FlatList
-              data={groupedBookings.flatMap((group) => [
-                { type: 'header', category: group.category } as any,
-                ...group.bookings.map((booking) => ({ type: 'booking', ...booking })),
-              ])}
+              data={flatListData}
               renderItem={({ item, index }) => {
                 if (item.type === 'header') {
                   const categoryLabels: Record<string, string> = {

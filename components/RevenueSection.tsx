@@ -62,7 +62,7 @@ export const RevenueSection = ({ revenueData, navigation }: { revenueData: any, 
       </ScrollView>
 
       {/* Payment Mode */}
-      <Text style={styles.sectionTitle}>Payment Mode Split</Text>
+      {/* <Text style={styles.sectionTitle}>Payment Mode Split</Text>
       {revenueData.revenueByPaymentMode.map((item: any, i: any) => {
         const percent = Math.round((item.total / revenueData.totalRevenue) * 100);
         return (
@@ -73,7 +73,7 @@ export const RevenueSection = ({ revenueData, navigation }: { revenueData: any, 
             <Text style={styles.amount}>₹{item.total.toLocaleString("en-IN")}</Text>
           </View>
         );
-      })}
+      })} */}
 
 
     </ScrollView>

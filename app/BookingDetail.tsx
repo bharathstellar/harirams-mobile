@@ -240,7 +240,7 @@ export default function BookingDetail() {
         return;
       }
       if (guestForm.guest_mobile.length !== 10) {
-        Alert.alert('Invalid Mobile', 'Mobile number must be exactly 10 digits.');
+        Alert.alert('Invalid Mobile Number', 'Mobile number must be exactly 10 digits.');
         return;
       }
     }

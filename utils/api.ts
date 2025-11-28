@@ -291,7 +291,7 @@ export const submitCheckout = async (bookingId: string, checkoutData: { misc_cha
   const token = await AsyncStorage.getItem('userToken');
   if (!token) throw new Error('No authentication token found');
 
-  return apiCall(`${API_CONFIG.ENDPOINTS.SubmitCheckout}/${bookingId}/checkout`, {
+  return fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SubmitCheckout}/${bookingId}/checkout`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,

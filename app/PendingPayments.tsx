@@ -181,22 +181,8 @@ export default function PendingPayments() {
     return groups.filter((g) => g.bookings.length > 0);
   }, [bookings]);
 
-  // Flatten grouped bookings into a list with headers and stable S.No
-  const flatListData = useMemo(() => {
-    let bookingIndex = 0;
-    const startSno = pagination ? (pagination.currentPage - 1) * pagination.limit : 0;
-
-    return groupedBookings.flatMap((group) => [
-      { type: 'header', category: group.category } as any,
-      ...group.bookings.map((booking) => {
-        bookingIndex += 1;
-        return { type: 'booking', ...booking, sno: startSno + bookingIndex };
-      }),
-    ]);
-  }, [groupedBookings, pagination]);
-
-  const renderBookingItem = ({ item }: { item: any }) => {
-    const sno = item.sno;
+  const renderBookingItem = ({ item, index }: { item: CheckoutBooking; index: number }) => {
+    const sno = pagination ? (pagination.currentPage - 1) * pagination.limit + (index + 1) : index + 1;
 
     // Helper function to safely get room numbers
     const getRoomNumbers = (): string => {
@@ -316,8 +302,11 @@ export default function PendingPayments() {
         ) : (
           <>
             <FlatList
-              data={flatListData}
-              renderItem={({ item }) => {
+              data={groupedBookings.flatMap((group) => [
+                { type: 'header', category: group.category } as any,
+                ...group.bookings.map((booking) => ({ type: 'booking', ...booking })),
+              ])}
+              renderItem={({ item, index }) => {
                 if (item.type === 'header') {
                   const categoryLabels: Record<string, string> = {
                     today: 'Today Check-out',
@@ -332,7 +321,7 @@ export default function PendingPayments() {
                     </View>
                   );
                 }
-                return renderBookingItem({ item });
+                return renderBookingItem({ item: item as CheckoutBooking, index });
               }}
               keyExtractor={(item, index) => {
                 if (item.type === 'header') {

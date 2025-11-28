@@ -7,6 +7,7 @@ import {
   Alert,
   BackHandler,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,10 +29,14 @@ type BookingDetail = {
   }>;
   checkin_date: string;
   checkout_date: string;
-  actual_checkin_time: string;
-  checkin_by: string;
+  actual_checkin_time?: string;
+  checkin_by?: string;
   customer_name: string;
   customer_mobile: string;
+  customer_address?: string;
+  customer_city?: string;
+  customer_state?: string;
+  customer_zip?: string;
   total_amount: number;
   advance_amount: number;
   pending_amount: number;
@@ -44,15 +49,15 @@ type BookingDetail = {
 export default function CheckoutSummary() {
   const insets = useSafeAreaInsets();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [checkoutConfirmed, setCheckoutConfirmed] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<BookingDetail | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [miscCharges, setMiscCharges] = useState('');
   const [pendingCollected, setPendingCollected] = useState('');
-  const [paymentMode, setPaymentMode] = useState<'cash' | 'upi' | 'card'>('upi');
+  const [paymentMode, setPaymentMode] = useState('UPI');
 
+  // Fetch booking details
   useEffect(() => {
     if (bookingId) {
       fetchBookingDetails();
@@ -69,20 +74,36 @@ export default function CheckoutSummary() {
     }
   }, [checkoutConfirmed]);
 
+  // Handle Android back button
+  useEffect(() => {
+    if (Platform.OS === 'android' && !checkoutConfirmed) {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        router.back();
+        return true;
+      });
+      return () => backHandler.remove();
+    }
+  }, [checkoutConfirmed]);
+
   const fetchBookingDetails = async () => {
     try {
       setLoading(true);
-      setError(null);
       const data = await getBookingForCheckout(bookingId);
       if (data.success && data.booking) {
         setBooking(data.booking);
-        // Pre-fill pending collected with pending amount (including 0)
-        setPendingCollected(String(data.booking.pending_amount || 0));
+        // Pre-fill pending collected with pending amount
+        if (data.booking.pending_amount) {
+          setPendingCollected(data.booking.pending_amount.toString());
+        }
       } else {
-        setError(data.message || 'Failed to load booking details');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: data.message || 'Failed to load booking details',
+        });
       }
     } catch (e: any) {
-      setError(e?.message || 'Failed to load booking details');
+      console.error('Error fetching booking details:', e);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -99,36 +120,33 @@ export default function CheckoutSummary() {
       return;
     }
 
-    if (!pendingCollected.trim()) {
-      Alert.alert('Required Field', 'Please enter pending collected amount.');
-      return;
-    }
+    const miscChargesNum = parseFloat(miscCharges) || 0;
+    const pendingCollectedNum = parseFloat(pendingCollected) || 0;
 
-    const pendingValue = parseFloat(pendingCollected);
-    if (isNaN(pendingValue) || pendingValue < 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid pending collected amount.');
+    if (pendingCollectedNum < 0) {
+      Alert.alert('Error', 'Pending collected amount cannot be negative.');
       return;
     }
 
     setSubmitting(true);
     try {
-      const checkoutData: any = {
-        pending_collected: pendingValue,
-        payment_mode: paymentMode,
+      const checkoutData = {
+        misc_charges: miscChargesNum,
+        pending_collected: pendingCollectedNum,
+        payment_mode: paymentMode.toLowerCase(),
       };
 
-      // Add misc_charges only if provided
-      if (miscCharges.trim()) {
-        const miscValue = parseFloat(miscCharges);
-        if (!isNaN(miscValue) && miscValue >= 0) {
-          checkoutData.misc_charges = miscValue;
-        }
+      const response = await submitCheckout(bookingId, checkoutData);
+      const responseText = await response.text();
+      let data: any = null;
+      try {
+        data = responseText ? JSON.parse(responseText) : null;
+      } catch (e) {
+        console.error('Error parsing response:', e);
       }
 
-      const data = await submitCheckout(bookingId, checkoutData);
-
-      if (!data?.success) {
-        throw new Error(data?.message || 'Checkout failed');
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || `Checkout failed: ${response.status}`);
       }
 
       Toast.show({
@@ -151,7 +169,6 @@ export default function CheckoutSummary() {
         router.replace(targetRoute);
       }, 2000);
     } catch (error: any) {
-      console.error('Checkout error:', error);
       Toast.show({
         type: 'error',
         text1: 'Checkout Failed',
@@ -162,31 +179,27 @@ export default function CheckoutSummary() {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <PageHeader title="Checkout Summary" onBackPress={() => router.back()} />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#43A047" />
-          <Text style={styles.loadingText}>Loading booking details...</Text>
-        </View>
-      </View>
-    );
-  }
+  const getRoomNumbers = (): string => {
+    if (!booking?.rooms) return '-';
+    try {
+      if (Array.isArray(booking.rooms) && booking.rooms.length > 0) {
+        const roomNumbers: string[] = [];
+        for (const r of booking.rooms) {
+          if (r && typeof r === 'object' && 'room_number' in r && r.room_number != null) {
+            const num = String(r.room_number).trim();
+            if (num) roomNumbers.push(num);
+          }
+        }
+        return roomNumbers.length > 0 ? roomNumbers.join(', ') : '-';
+      }
+      return '-';
+    } catch {
+      return '-';
+    }
+  };
 
-  if (error || !booking) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <PageHeader title="Checkout Summary" onBackPress={() => router.back()} />
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{error || 'Booking not found'}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchBookingDetails}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  const totalToPay = (booking?.pending_amount || 0) + (parseFloat(miscCharges) || 0);
+  const pendingCollectedNum = parseFloat(pendingCollected) || 0;
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(10, insets.bottom) }]}>
@@ -199,135 +212,156 @@ export default function CheckoutSummary() {
         <View style={styles.content}>
           <Image source={require('../assets/harirams_logo.png')} style={styles.logo} />
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Booking Information</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Booking ID:</Text>
-              <Text style={styles.infoValue}>{booking.BookingId}</Text>
+          {loading ? (
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color="#43A047" />
+              <Text style={styles.loadingText}>Loading booking details...</Text>
             </View>
-            {booking.rooms && Array.isArray(booking.rooms) && booking.rooms.length > 0 && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Room:</Text>
-                <Text style={styles.infoValue}>
-                  {booking.rooms.map((r: { room_id: string; room_number: string }) => r.room_number).join(', ')}
-                </Text>
+          ) : booking ? (
+            <>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Booking Information</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Booking ID:</Text>
+                  <Text style={styles.infoValue}>{booking.BookingId}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Room:</Text>
+                  <Text style={styles.infoValue}>{getRoomNumbers()}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Customer:</Text>
+                  <Text style={styles.infoValue}>{booking.customer_name || booking.guest_name || '-'}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Mobile:</Text>
+                  <Text style={styles.infoValue}>{booking.customer_mobile || booking.guest_mobile || '-'}</Text>
+                </View>
               </View>
-            )}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Customer:</Text>
-              <Text style={styles.infoValue}>{booking.customer_name || booking.guest_name || '-'}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Mobile:</Text>
-              <Text style={styles.infoValue}>{booking.customer_mobile || booking.guest_mobile || '-'}</Text>
-            </View>
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Payment Summary</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Total Amount:</Text>
-              <Text style={styles.infoValue}>₹{booking.total_amount?.toLocaleString() || 0}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Advance Paid:</Text>
-              <Text style={styles.infoValue}>₹{booking.advance_amount?.toLocaleString() || 0}</Text>
-            </View>
-            {booking.pending_amount > 0 && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Pending Amount:</Text>
-                <Text style={[styles.infoValue, styles.pendingAmount]}>₹{booking.pending_amount?.toLocaleString() || 0}</Text>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Booking Dates</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Check-in:</Text>
+                  <Text style={styles.infoValue}>
+                    {booking.checkin_date ? new Date(booking.checkin_date).toLocaleDateString() : '-'}
+                  </Text>
+                </View>
+                {booking.actual_checkin_time && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Check-in Time:</Text>
+                    <Text style={styles.infoValue}>
+                      {new Date(booking.actual_checkin_time).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Check-out:</Text>
+                  <Text style={styles.infoValue}>
+                    {booking.checkout_date ? new Date(booking.checkout_date).toLocaleDateString() : '-'}
+                  </Text>
+                </View>
               </View>
-            )}
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Checkout Details</Text>
-            
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Miscellaneous Charges (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter miscellaneous charges"
-                placeholderTextColor="#999"
-                value={miscCharges}
-                onChangeText={(value) => setMiscCharges(value.replace(/[^0-9.]/g, ''))}
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Pending Collected *</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: '#fff' }]}
-                editable={false}
-                placeholder="Enter pending collected amount"
-                placeholderTextColor="#999"
-                value={pendingCollected}
-                onChangeText={(value) => setPendingCollected(value.replace(/[^0-9.]/g, ''))}
-                keyboardType="decimal-pad"
-              />
-            </View>
-
-            {/* Total Calculation */}
-            <View style={styles.totalContainer}>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Pending Amount:</Text>
-                <Text style={styles.totalValue}>₹{booking.pending_amount?.toLocaleString() || 0}</Text>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Payment Details</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Total Amount:</Text>
+                  <Text style={styles.infoValue}>₹{booking.total_amount?.toLocaleString() || '0'}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Advance Paid:</Text>
+                  <Text style={styles.infoValue}>₹{booking.advance_amount?.toLocaleString() || '0'}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Payment Mode:</Text>
+                  <Text style={styles.infoValue}>{booking.advance_payment_mode?.toUpperCase() || '-'}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Pending Amount:</Text>
+                  <Text style={[styles.infoValue, styles.pendingAmount]}>
+                    ₹{booking.pending_amount?.toLocaleString() || '0'}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Misc Charges:</Text>
-                <Text style={styles.totalValue}>₹{miscCharges ? parseFloat(miscCharges).toLocaleString() : '0'}</Text>
-              </View>
-              <View style={[styles.totalRow, styles.totalFinalRow]}>
-                <Text style={styles.totalFinalLabel}>Total to Collect:</Text>
-                <Text style={styles.totalFinalValue}>
-                  ₹{((booking.pending_amount || 0) + (miscCharges ? parseFloat(miscCharges) || 0 : 0)).toLocaleString()}
-                </Text>
-              </View>
-            </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Payment Mode *</Text>
-              <View style={styles.radioGroup}>
-              <TouchableOpacity
-                  style={[styles.radioOption, paymentMode === 'upi' && styles.radioOptionSelected]}
-                  onPress={() => setPaymentMode('upi')}
-                >
-                  <Text style={[styles.radioText, paymentMode === 'upi' && styles.radioTextSelected]}>UPI</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.radioOption, paymentMode === 'cash' && styles.radioOptionSelected]}
-                  onPress={() => setPaymentMode('cash')}
-                >
-                  <Text style={[styles.radioText, paymentMode === 'cash' && styles.radioTextSelected]}>Cash</Text>
-                </TouchableOpacity>
-           
-                <TouchableOpacity
-                  style={[styles.radioOption, paymentMode === 'card' && styles.radioOptionSelected]}
-                  onPress={() => setPaymentMode('card')}
-                >
-                  <Text style={[styles.radioText, paymentMode === 'card' && styles.radioTextSelected]}>Card</Text>
-                </TouchableOpacity>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Checkout Details</Text>
+                <View style={styles.inputRow}>
+                  <Text style={styles.inputLabel}>Miscellaneous Charges (₹):</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={miscCharges}
+                    onChangeText={setMiscCharges}
+                    placeholder="0"
+                    keyboardType="numeric"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={styles.inputRow}>
+                  <Text style={styles.inputLabel}>Pending Amount Collected (₹):</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={pendingCollected}
+                    onChangeText={setPendingCollected}
+                    placeholder={booking.pending_amount?.toString() || '0'}
+                    keyboardType="numeric"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={styles.inputRow}>
+                  <Text style={styles.inputLabel}>Payment Mode:</Text>
+                  <View style={styles.paymentModeContainer}>
+                    {['UPI', 'Cash', 'Card'].map((mode) => (
+                      <TouchableOpacity
+                        key={mode}
+                        style={[styles.paymentModeButton, paymentMode === mode && styles.paymentModeButtonActive]}
+                        onPress={() => setPaymentMode(mode)}
+                      >
+                        <Text
+                          style={[
+                            styles.paymentModeText,
+                            paymentMode === mode && styles.paymentModeTextActive,
+                          ]}
+                        >
+                          {mode}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Total to Pay:</Text>
+                  <Text style={styles.totalValue}>₹{totalToPay.toLocaleString()}</Text>
+                </View>
               </View>
-            </View>
-          </View>
 
-          {!checkoutConfirmed && (
-            <LoadingButton
-              title="Confirm Checkout"
-              onPress={handleConfirmCheckout}
-              loading={submitting}
-              loadingText="Processing Checkout..."
-              style={styles.confirmButton}
-              textStyle={styles.confirmButtonText}
-            />
-          )}
+              {!checkoutConfirmed && (
+                <LoadingButton
+                  title="Confirm Checkout"
+                  onPress={handleConfirmCheckout}
+                  loading={submitting}
+                  loadingText="Processing Checkout..."
+                  style={styles.confirmButton}
+                  textStyle={styles.confirmButtonText}
+                />
+              )}
 
-          {checkoutConfirmed && (
-            <View style={styles.successContainer}>
-              <Text style={styles.successText}>Checkout Confirmed Successfully!</Text>
-              <Text style={styles.successSubText}>Redirecting to dashboard...</Text>
+              {checkoutConfirmed && (
+                <View style={styles.successContainer}>
+                  <Text style={styles.successText}>Checkout Confirmed Successfully!</Text>
+                  <Text style={styles.successSubText}>Redirecting to dashboard...</Text>
+                </View>
+              )}
+            </>
+          ) : (
+            <View style={styles.center}>
+              <Text style={styles.errorText}>Failed to load booking details</Text>
+              <LoadingButton title="Retry" onPress={fetchBookingDetails} style={{ marginTop: 12 }} />
             </View>
           )}
         </View>
@@ -339,12 +373,7 @@ export default function CheckoutSummary() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -398,85 +427,66 @@ const styles = StyleSheet.create({
   pendingAmount: {
     color: '#C62828',
   },
-  formGroup: {
+  inputRow: {
     marginBottom: 16,
   },
-  label: {
+  inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#666',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
     color: '#111',
   },
-  radioGroup: {
+  paymentModeContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
-  radioOption: {
+  paymentModeButton: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#e0e0e0',
     backgroundColor: '#fff',
     alignItems: 'center',
   },
-  radioOptionSelected: {
+  paymentModeButtonActive: {
+    backgroundColor: '#4CAF50',
     borderColor: '#4CAF50',
-    backgroundColor: '#E8F5E9',
   },
-  radioText: {
-    fontSize: 16,
+  paymentModeText: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#666',
   },
-  radioTextSelected: {
-    color: '#4CAF50',
-  },
-  totalContainer: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 2,
-    borderTopColor: '#e0e0e0',
+  paymentModeTextActive: {
+    color: '#fff',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  totalLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  totalValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111',
-  },
-  totalFinalRow: {
     marginTop: 8,
-    paddingTop: 12,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
   },
-  totalFinalLabel: {
+  totalLabel: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#2E7D32',
+    color: '#111',
   },
-  totalFinalValue: {
-    fontSize: 18,
+  totalValue: {
+    fontSize: 20,
     fontWeight: '700',
     color: '#2E7D32',
   },
@@ -517,6 +527,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
   loadingText: {
     marginTop: 10,
     color: '#666',
@@ -525,18 +540,5 @@ const styles = StyleSheet.create({
     color: '#d32f2f',
     fontSize: 16,
     textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
-

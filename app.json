@@ -4,7 +4,7 @@
     "slug": "harirams",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/harirams_logo.png",
+    "icon": "./assets/Harirams-logo.webp",
     "scheme": "harirams",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -26,11 +26,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/harirams_logo.png",
-        "backgroundImage": "./assets/harirams_logo.png",
+        "foregroundImage": "./assets/Harirams-logo.webp",
+        "backgroundImage": "./assets/Harirams-logo.webp",
         "backgroundColor": "#E6F4FE"
       },
-      "icon": "./assets/harirams_logo.png",
+      "icon": "./assets/Harirams-logo.webp",
       "package": "com.bharathstellar.harirams",
       "permissions": [
         "CAMERA",

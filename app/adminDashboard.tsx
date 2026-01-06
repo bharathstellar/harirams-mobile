@@ -305,7 +305,6 @@ export default function AdminDashboard() {
     } catch (e: any) {
       // Silently fail - dashboard overview is optional
       // The occupancy API is the primary source for room data
-      console.log('Dashboard overview not available, using occupancy API only');
       setDashboard(null);
     }
   }, []);

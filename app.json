@@ -4,16 +4,13 @@
     "slug": "harirams",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/Harirams-logo.webp",
+    "icon": "./assets/harirams_1.jpg",
     "scheme": "harirams",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/harirams_logo.png",
+      "image": "./assets/harirams_1.jpg",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff",
-      "dark": {
-        "backgroundColor": "#000000"
-      }
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
@@ -26,11 +23,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/Harirams-logo.webp",
-        "backgroundImage": "./assets/Harirams-logo.webp",
+        "foregroundImage": "./assets/harirams_1.jpg",
+        "backgroundImage": "./assets/harirams_1.jpg",
         "backgroundColor": "#E6F4FE"
       },
-      "icon": "./assets/Harirams-logo.webp",
+      "icon": "./assets/harirams_1.jpg",
       "package": "com.bharathstellar.harirams",
       "permissions": [
         "CAMERA",
@@ -42,7 +39,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/harirams_logo.png"
+      "favicon": "./assets/harirams_1.jpg"
     },
     "plugins": [
       "expo-router",
@@ -57,6 +54,7 @@
       "eas": {
         "projectId": "e81c4174-970a-49ea-ba81-bcb3e407a351"
       }
-    }
+    },
+    "owner": "bharathstellar"
   }
 }

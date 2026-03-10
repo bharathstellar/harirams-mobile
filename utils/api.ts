@@ -1,6 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
-    BASE_URL: 'https://api.stellarsolutions.org/v1/api',
+    BASE_URL: 'http://192.168.1.15:3000/v1/api',
+    // BASE_URL: 'https://api.stellarsolutions.org/v1/api',
   // BASE_URL: 'https://hariramsapi-f8ccetawf7hdcqdh.centralus-01.azurewebsites.net/v1/api',
   ENDPOINTS: {
     //tenents
@@ -10,6 +11,8 @@ export const API_CONFIG = {
     AdminCurrentBookings: '/mobile/bookings/current',
     AdminPastBookings: '/mobile/bookings/past',
     FutureAndCheckinBookings: '/mobile/bookings/future-and-checkin',
+    AdminCurrentBookingsList: '/mobile/bookings/current/list/admin',
+    AdminFutureBookingsList: '/mobile/bookings/future/list/admin',
     CancelBooking: '/mobile/bookings',
     AdminBookingPercentage: '/mobile/rooms/booking-percentage',
     AdminDashboard: '/mobile/bookings/dashboard',
@@ -121,6 +124,42 @@ export const getFutureAndCheckinBookings = async (page: number = 1, limit: numbe
   if (search) qs.set('search', search);
 
   return apiCall(`${API_CONFIG.ENDPOINTS.FutureAndCheckinBookings}?${qs.toString()}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+};
+
+// Admin: Current bookings list (new admin endpoint)
+export const getAdminCurrentBookingsList = async (page: number = 1, limit: number = 10, search?: string) => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  const token = await AsyncStorage.getItem('userToken');
+  if (!token) throw new Error('No authentication token found');
+
+  const qs = new URLSearchParams();
+  qs.set('page', String(page));
+  qs.set('limit', String(limit));
+  // Backend handles search by name or phone via single `search` param
+  if (search) qs.set('search', search);
+
+  return apiCall(`${API_CONFIG.ENDPOINTS.AdminCurrentBookingsList}?${qs.toString()}`, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+};
+
+// Admin: Future bookings list (new admin endpoint)
+export const getAdminFutureBookingsList = async (page: number = 1, limit: number = 10, search?: string) => {
+  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  const token = await AsyncStorage.getItem('userToken');
+  if (!token) throw new Error('No authentication token found');
+
+  const qs = new URLSearchParams();
+  qs.set('page', String(page));
+  qs.set('limit', String(limit));
+  // Backend handles search by name or phone via single `search` param
+  if (search) qs.set('search', search);
+
+  return apiCall(`${API_CONFIG.ENDPOINTS.AdminFutureBookingsList}?${qs.toString()}`, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` },
   });

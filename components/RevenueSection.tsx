@@ -62,18 +62,29 @@ export const RevenueSection = ({ revenueData, navigation }: { revenueData: any, 
       </ScrollView>
 
       {/* Payment Mode */}
-      {/* <Text style={styles.sectionTitle}>Payment Mode Split</Text>
-      {revenueData.revenueByPaymentMode.map((item: any, i: any) => {
-        const percent = Math.round((item.total / revenueData.totalRevenue) * 100);
-        return (
-          <View key={i} style={styles.paymentRow}>
-            <View style={[styles.dot, { backgroundColor: COLORS[i % COLORS.length] }]} />
-            <Text style={styles.mode}>{item.mode}</Text>
-            <Text style={styles.percent}>{percent}%</Text>
-            <Text style={styles.amount}>₹{item.total.toLocaleString("en-IN")}</Text>
-          </View>
-        );
-      })} */}
+      {Array.isArray(revenueData.revenueByPaymentMode) && revenueData.revenueByPaymentMode.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Payment Mode Split</Text>
+          {revenueData.revenueByPaymentMode.map((item: any, i: number) => {
+            const totalRevenue = revenueData.totalRevenue || 0;
+            const rawPercent = totalRevenue > 0 ? (item.total / totalRevenue) * 100 : 0;
+            const percent = Math.round(rawPercent);
+            const modeLabel =
+              typeof item.mode === "string"
+                ? item.mode.toUpperCase()
+                : "OTHER";
+
+            return (
+              <View key={`${modeLabel}-${i}`} style={styles.paymentRow}>
+                <View style={[styles.dot, { backgroundColor: COLORS[i % COLORS.length] }]} />
+                <Text style={styles.mode}>{modeLabel}</Text>
+                <Text style={styles.percent}>{percent}%</Text>
+                <Text style={styles.amount}>₹{item.total.toLocaleString("en-IN")}</Text>
+              </View>
+            );
+          })}
+        </>
+      )}
 
 
     </ScrollView>

@@ -25,6 +25,8 @@ import PageHeader from "../components/PageHeader";
 import { RevenueSection } from "../components/RevenueSection";
 import {
   cancelBooking,
+  getAdminCurrentBookingsList,
+  getAdminFutureBookingsList,
   getBookingHistory,
   getCurrentBookings,
   getDashboardOverview,
@@ -114,6 +116,7 @@ export default function AdminDashboard() {
   const insets = useSafeAreaInsets();
 
   const [current, setCurrent] = useState<Booking[]>([]);
+  const [future, setFuture] = useState<Booking[]>([]);
   const [past, setPast] = useState<Booking[]>([]);
   const [occupancyData, setOccupancyData] = useState<OccupancyData | null>(null);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
@@ -124,15 +127,20 @@ export default function AdminDashboard() {
 
   const [loading, setLoading] = useState(false);
   const [loadingCurrent, setLoadingCurrent] = useState(false);
+  const [loadingFuture, setLoadingFuture] = useState(false);
   const [loadingPast, setLoadingPast] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [currentSearch, setCurrentSearch] = useState("");
+  const [futureSearch, setFutureSearch] = useState("");
   const [pastSearch, setPastSearch] = useState("");
   const [pastMonth, setPastMonth] = useState<string | undefined>(undefined);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPagination, setCurrentPagination] = useState<PaginationInfo | null>(null);
+
+  const [futurePage, setFuturePage] = useState(1);
+  const [futurePagination, setFuturePagination] = useState<PaginationInfo | null>(null);
 
   const [pastPage, setPastPage] = useState(1);
   const [pastPagination, setPastPagination] = useState<PaginationInfo | null>(null);
@@ -150,85 +158,220 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // Fetch current bookings (future and check-in)
+  // Fetch current bookings (admin endpoint)
   const fetchCurrentBookings = useCallback(
     async (page = currentPage, search?: string, silent = false) => {
       if (!silent) setLoadingCurrent(true);
       try {
-        const response = await getFutureAndCheckinBookings(page, 10, search);
-        
-        if (response.success) {
-          // Combine both future and check-in bookings
-          const futureBookings = (response.futureBookings || []).map((item: any) => ({
-            _id: item._id,
-            BookingId: item.BookingId,
-            RoomNumber: item.rooms?.map((r: any) => r.room_number) || [],
-            BookedRoomNo: item.rooms?.map((r: any) => r.room_number) || [],
-            customerPhone: item.customer_mobile,
-            customerName: item.customer_name,
-            TotalAmountType: item.advance_payment_mode,
-            TotalAmount: item.total_amount,
-            PendingAmount: item.pending_amount,
-            paymentStatus: item.pending_amount > 0 ? "Pending" : "Paid",
-            CheckInDate: item.checkin_date,
-            CheckOutDate: item.checkout_date,
-            status: item.status,
-          })) as Booking[];
+        const currentJson = await getAdminCurrentBookingsList(page, 10, search);
 
-          const checkinBookings = (response.checkinBookings || []).map((item: any) => ({
-            _id: item._id,
-            BookingId: item.BookingId,
-            RoomNumber: item.rooms?.map((r: any) => r.room_number) || [],
-            BookedRoomNo: item.rooms?.map((r: any) => r.room_number) || [],
-            customerPhone: item.customer_mobile,
-            customerName: item.customer_name,
-            TotalAmountType: item.advance_payment_mode,
-            TotalAmount: item.total_amount,
-            PendingAmount: item.pending_amount,
-            paymentStatus: item.pending_amount > 0 ? "Pending" : "Paid",
-            CheckInDate: item.checkin_date,
-            CheckOutDate: item.checkout_date,
-            status: item.status,
-          })) as Booking[];
-          
-          // Combine both arrays
-          const allBookings = [...futureBookings, ...checkinBookings];
-          setCurrent(allBookings);
-          
-          if (response.pagination) {
-            // Calculate total bookings from both arrays
-            const totalBookings = (response.pagination.totalFutureBookings || 0) + (response.pagination.totalCheckinBookings || 0);
-            setCurrentPagination({
-              currentPage: response.pagination.currentPage,
-              totalPages: response.pagination.totalPages,
-              totalBookings: totalBookings,
-              limit: response.pagination.limit,
-              hasNextPage: response.pagination.hasNextPage || false,
-              hasPrevPage: response.pagination.hasPrevPage || false,
-            } as PaginationInfo);
-          } else {
-            setCurrentPagination(null);
-          }
+        const currentBookings: Booking[] = (currentJson?.bookings || []).map((item: any) => ({
+          _id: item.id,
+          BookingId: item.bookingId,
+          RoomNumber: (item.rooms || []).map((r: any) => r.room_number),
+          BookedRoomNo: (item.rooms || []).map((r: any) => r.room_number),
+          customerPhone: item.phone,
+          customerName: item.name,
+          TotalAmountType: "",
+          TotalAmount: 0,
+          PendingAmount: item.pendingAmount,
+          paymentStatus: item.paymentStatus,
+          CheckInDate: item.checkInDate,
+          CheckOutDate: item.checkOutDate,
+          status: item.bookingStatus,
+        }));
+
+        setCurrent(currentBookings);
+
+        const curPag = currentJson?.paginationInfo;
+
+        if (curPag) {
+          setCurrentPagination({
+            currentPage: curPag.currentPage,
+            totalPages: curPag.totalPages,
+            totalBookings: curPag.totalBookings,
+            limit: curPag.limit,
+            hasNextPage: curPag.hasNextPage,
+            hasPrevPage: curPag.hasPrevPage,
+          });
+        } else {
+          setCurrentPagination(null);
         }
       } catch (e: any) {
-        // Fallback to old API if new one fails
+        // Fallback to old APIs if new ones fail
         try {
-          const curJson = await getCurrentBookings(page, search || undefined);
-          setCurrent((curJson.bookings ?? []) as Booking[]);
-          setBookedRooms(curJson.bookedRooms ?? []);
-          if (curJson.paginationInfo) {
-            setCurrentPagination(curJson.paginationInfo as PaginationInfo);
-          } else {
-            setCurrentPagination(null);
+          const response = await getFutureAndCheckinBookings(page, 10, search);
+
+          if (response.success) {
+            const futureBookings = (response.futureBookings || []).map((item: any) => ({
+              _id: item._id,
+              BookingId: item.BookingId,
+              RoomNumber: item.rooms?.map((r: any) => r.room_number) || [],
+              BookedRoomNo: item.rooms?.map((r: any) => r.room_number) || [],
+              customerPhone: item.customer_mobile,
+              customerName: item.customer_name,
+              TotalAmountType: item.advance_payment_mode,
+              TotalAmount: item.total_amount,
+              PendingAmount: item.pending_amount,
+              paymentStatus: item.pending_amount > 0 ? "Pending" : "Paid",
+              CheckInDate: item.checkin_date,
+              CheckOutDate: item.checkout_date,
+              status: item.status,
+            })) as Booking[];
+
+            const checkinBookings = (response.checkinBookings || []).map((item: any) => ({
+              _id: item._id,
+              BookingId: item.BookingId,
+              RoomNumber: item.rooms?.map((r: any) => r.room_number) || [],
+              BookedRoomNo: item.rooms?.map((r: any) => r.room_number) || [],
+              customerPhone: item.customer_mobile,
+              customerName: item.customer_name,
+              TotalAmountType: item.advance_payment_mode,
+              TotalAmount: item.total_amount,
+              PendingAmount: item.pending_amount,
+              paymentStatus: item.pending_amount > 0 ? "Pending" : "Paid",
+              CheckInDate: item.checkin_date,
+              CheckOutDate: item.checkout_date,
+              status: item.status,
+            })) as Booking[];
+
+            setFuture(futureBookings);
+            setCurrent(checkinBookings);
+
+            if (response.pagination) {
+              setCurrentPagination({
+                currentPage: response.pagination.currentPage,
+                totalPages: response.pagination.totalPages,
+                totalBookings: response.pagination.totalCheckinBookings || 0,
+                limit: response.pagination.limit,
+                hasNextPage: response.pagination.hasNextPage || false,
+                hasPrevPage: response.pagination.hasPrevPage || false,
+              } as PaginationInfo);
+            } else {
+              setCurrentPagination(null);
+            }
           }
-        } catch (err: any) {
-          setError(err?.message ?? "Something went wrong");
+        } catch (fallbackErr: any) {
+          try {
+            const curJson = await getCurrentBookings(page, search || undefined);
+            setCurrent((curJson.bookings ?? []) as Booking[]);
+            setBookedRooms(curJson.bookedRooms ?? []);
+            if (curJson.paginationInfo) {
+              setCurrentPagination(curJson.paginationInfo as PaginationInfo);
+            } else {
+              setCurrentPagination(null);
+            }
+          } catch (err: any) {
+            setError(err?.message ?? "Something went wrong");
+          }
         }
       } finally {
         if (!silent) setLoadingCurrent(false);
       }
     },
     [currentPage]
+  );
+
+  // Fetch future bookings (admin endpoint)
+  const fetchFutureBookings = useCallback(
+    async (page = futurePage, search?: string, silent = false) => {
+      if (!silent) setLoadingFuture(true);
+      try {
+        const futureJson = await getAdminFutureBookingsList(page, 10, search);
+
+        const futureBookings: Booking[] = (futureJson?.bookings || []).map((item: any) => ({
+          _id: item.id,
+          BookingId: item.bookingId,
+          RoomNumber: (item.rooms || []).map((r: any) => r.room_number),
+          BookedRoomNo: (item.rooms || []).map((r: any) => r.room_number),
+          customerPhone: item.phone,
+          customerName: item.name,
+          TotalAmountType: "",
+          TotalAmount: 0,
+          PendingAmount: item.pendingAmount,
+          paymentStatus: item.paymentStatus,
+          CheckInDate: item.checkInDate,
+          CheckOutDate: item.checkOutDate,
+          status: item.bookingStatus,
+        }));
+
+        setFuture(futureBookings);
+
+        const futPag = futureJson?.paginationInfo;
+        if (futPag) {
+          setFuturePagination({
+            currentPage: futPag.currentPage,
+            totalPages: futPag.totalPages,
+            totalBookings: futPag.totalBookings,
+            limit: futPag.limit,
+            hasNextPage: futPag.hasNextPage,
+            hasPrevPage: futPag.hasPrevPage,
+          });
+        } else {
+          setFuturePagination(null);
+        }
+      } catch (e: any) {
+        // Fallback to old combined endpoint
+        try {
+          const response = await getFutureAndCheckinBookings(page, 10, search);
+
+          if (response.success) {
+            const futureBookings = (response.futureBookings || []).map((item: any) => ({
+              _id: item._id,
+              BookingId: item.BookingId,
+              RoomNumber: item.rooms?.map((r: any) => r.room_number) || [],
+              BookedRoomNo: item.rooms?.map((r: any) => r.room_number) || [],
+              customerPhone: item.customer_mobile,
+              customerName: item.customer_name,
+              TotalAmountType: item.advance_payment_mode,
+              TotalAmount: item.total_amount,
+              PendingAmount: item.pending_amount,
+              paymentStatus: item.pending_amount > 0 ? "Pending" : "Paid",
+              CheckInDate: item.checkin_date,
+              CheckOutDate: item.checkout_date,
+              status: item.status,
+            })) as Booking[];
+
+            const checkinBookings = (response.checkinBookings || []).map((item: any) => ({
+              _id: item._id,
+              BookingId: item.BookingId,
+              RoomNumber: item.rooms?.map((r: any) => r.room_number) || [],
+              BookedRoomNo: item.rooms?.map((r: any) => r.room_number) || [],
+              customerPhone: item.customer_mobile,
+              customerName: item.customer_name,
+              TotalAmountType: item.advance_payment_mode,
+              TotalAmount: item.total_amount,
+              PendingAmount: item.pending_amount,
+              paymentStatus: item.pending_amount > 0 ? "Pending" : "Paid",
+              CheckInDate: item.checkin_date,
+              CheckOutDate: item.checkout_date,
+              status: item.status,
+            })) as Booking[];
+
+            setFuture(futureBookings);
+            setCurrent(checkinBookings);
+
+            if (response.pagination) {
+              setFuturePagination({
+                currentPage: response.pagination.currentPage,
+                totalPages: response.pagination.totalPages,
+                totalBookings: response.pagination.totalFutureBookings || 0,
+                limit: response.pagination.limit,
+                hasNextPage: response.pagination.hasNextPage || false,
+                hasPrevPage: response.pagination.hasPrevPage || false,
+              } as PaginationInfo);
+            } else {
+              setFuturePagination(null);
+            }
+          }
+        } catch (err: any) {
+          setError(err?.message ?? "Something went wrong");
+        }
+      } finally {
+        if (!silent) setLoadingFuture(false);
+      }
+    },
+    [futurePage]
   );
 
   // Fetch past bookings using booking history API
@@ -353,6 +496,7 @@ export default function AdminDashboard() {
         fetchOccupancy(),
         fetchRevenue(),
         fetchCurrentBookings(currentPage, currentSearch || undefined),
+        fetchFutureBookings(futurePage, futureSearch || undefined, true),
         fetchPastBookings(1, true)
       ]);
     } catch (e: any) {
@@ -360,7 +504,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, currentSearch, fetchCurrentBookings, fetchOverview, fetchOccupancy, fetchPastBookings, fetchRevenue]);
+  }, [currentPage, futurePage, currentSearch, futureSearch, fetchCurrentBookings, fetchFutureBookings, fetchOverview, fetchOccupancy, fetchPastBookings, fetchRevenue]);
 
   useEffect(() => {
     fetchAll();
@@ -375,9 +519,22 @@ export default function AdminDashboard() {
     return () => clearTimeout(delayDebounce);
   }, [currentSearch, fetchCurrentBookings]);
 
+  // Debounce future search
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      setFuturePage(1);
+      fetchFutureBookings(1, futureSearch);
+    }, 500);
+    return () => clearTimeout(delayDebounce);
+  }, [futureSearch, fetchFutureBookings]);
+
   useEffect(() => {
     fetchCurrentBookings(currentPage, currentSearch);
-  }, [currentPage, fetchCurrentBookings]);
+  }, [currentPage, currentSearch, fetchCurrentBookings]);
+
+  useEffect(() => {
+    fetchFutureBookings(futurePage, futureSearch);
+  }, [futurePage, futureSearch, fetchFutureBookings]);
 
   // Debounce past search/month
   useEffect(() => {
@@ -534,9 +691,13 @@ export default function AdminDashboard() {
   };
 
   // Table row renderer
-  const renderRow = ({ index, item, isPast, columnWidths }: { index: number; item: Booking; isPast?: boolean; columnWidths: Record<string, number> }) => {
+  const renderRow = ({ index, item, isPast, useFuturePagination, columnWidths }: { index: number; item: Booking; isPast?: boolean; useFuturePagination?: boolean; columnWidths: Record<string, number> }) => {
     let sno = index + 1;
-    const pagination = isPast ? pastPagination : currentPagination;
+    const pagination = isPast
+      ? pastPagination
+      : useFuturePagination
+      ? futurePagination
+      : currentPagination;
     if (pagination) {
       sno = (pagination.currentPage - 1) * pagination.limit + (index + 1);
     }
@@ -654,7 +815,7 @@ export default function AdminDashboard() {
     );
   };
 
-  const Table = ({ title, data, isPast, loading, controls }: { title: string; data: Booking[]; isPast?: boolean; loading?: boolean; controls?: React.ReactNode }) => {
+  const Table = ({ title, data, isPast, useFuturePagination, loading, controls }: { title: string; data: Booking[]; isPast?: boolean; useFuturePagination?: boolean; loading?: boolean; controls?: React.ReactNode }) => {
     const columnWidths: Record<string, number> = isPast
       ? {
           sno: 60,
@@ -720,7 +881,7 @@ export default function AdminDashboard() {
               <FlatList
                 data={data}
                 keyExtractor={(i) => i._id}
-                renderItem={({ index, item }) => renderRow({ index, item, isPast, columnWidths })}
+                renderItem={({ index, item }) => renderRow({ index, item, isPast, useFuturePagination, columnWidths })}
                 scrollEnabled={false}
                 getItemLayout={(_, idx) => ({ length: 55, offset: 55 * idx, index: idx })}
                 ListEmptyComponent={<Text style={{ paddingVertical: 12, color: "#666", textAlign: "left", width: minWidth }}>No data</Text>}
@@ -821,7 +982,14 @@ export default function AdminDashboard() {
             </View>
 
             {/* Current bookings */}
-            <TextInput placeholder="Search today bookings (phone)" placeholderTextColor="#000" value={currentSearch} onChangeText={setCurrentSearch} style={[styles.inputLike, { marginBottom: 10 }]} />
+            <TextInput
+              placeholder="Search current bookings (name or phone)"
+              placeholderTextColor="#000"
+              value={currentSearch}
+              onChangeText={setCurrentSearch}
+              style={[styles.inputLike, { marginBottom: 10 }]}
+            />
+
             <Table title="Current Bookings" data={current} loading={loadingCurrent} />
 
             {currentPagination && (
@@ -838,6 +1006,37 @@ export default function AdminDashboard() {
                   disabled={!currentPagination.hasNextPage}
                   style={[styles.smallBtn, { backgroundColor: currentPagination.hasNextPage ? "#43A047" : "#ccc" }]}
                   onPress={() => setCurrentPage((p) => p + 1)}
+                >
+                  <Text style={styles.smallBtnText}>Next</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Future bookings */}
+            <TextInput
+              placeholder="Search future bookings (name or phone)"
+              placeholderTextColor="#000"
+              value={futureSearch}
+              onChangeText={setFutureSearch}
+              style={[styles.inputLike, { marginBottom: 10 }]}
+            />
+
+            <Table title="Future Bookings" data={future} useFuturePagination loading={loadingFuture} />
+
+            {futurePagination && (
+              <View style={{ flexDirection: "row", justifyContent: "center", marginBottom: 16, gap: 12 }}>
+                <TouchableOpacity
+                  disabled={!futurePagination.hasPrevPage}
+                  style={[styles.smallBtn, { backgroundColor: futurePagination.hasPrevPage ? "#43A047" : "#ccc" }]}
+                  onPress={() => setFuturePage((p) => Math.max(1, p - 1))}
+                >
+                  <Text style={styles.smallBtnText}>Prev</Text>
+                </TouchableOpacity>
+                <Text style={{ alignSelf: "center" }}>Page {futurePagination.currentPage} / {futurePagination.totalPages}</Text>
+                <TouchableOpacity
+                  disabled={!futurePagination.hasNextPage}
+                  style={[styles.smallBtn, { backgroundColor: futurePagination.hasNextPage ? "#43A047" : "#ccc" }]}
+                  onPress={() => setFuturePage((p) => p + 1)}
                 >
                   <Text style={styles.smallBtnText}>Next</Text>
                 </TouchableOpacity>

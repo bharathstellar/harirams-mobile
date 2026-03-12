@@ -63,7 +63,9 @@ const SelectRoomScreen = () => {
   const insets = useSafeAreaInsets();
 
   const [rooms, setRooms] = useState<RoomItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  // Start in loading state so we don't briefly show "No rooms available"
+  // before the first fetch completes with data.
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lockedStatus, setLockedStatus] = useState<RoomStatus | null>(null);
@@ -245,10 +247,7 @@ const handleAndroidPicker = useCallback(
         status: (r?.StatusOnDate ?? r?.Status ?? r?.status ?? r?.State ?? 'Available') as RoomStatus,
       }));
 
-      if (mapped.length === 0) {
-        throw new Error('Empty rooms list');
-      }
-
+      // Treat empty list as a valid response so UI can show "No rooms available"
       setRooms(mapped);
     } catch (e) {
       setError('Failed to load rooms from server');

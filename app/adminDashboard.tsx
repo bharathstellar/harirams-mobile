@@ -600,8 +600,9 @@ export default function AdminDashboard() {
               const response = await cancelBooking(bookingId);
               if (response.success) {
                 Alert.alert('Success', 'Booking cancelled successfully');
-                // Refresh current bookings
-                fetchCurrentBookings(currentPage, currentSearch || undefined);
+                // Refresh current & future bookings (future booking is where cancel is used)
+                fetchCurrentBookings(currentPage, currentSearch || undefined, true);
+                fetchFutureBookings(futurePage, futureSearch || undefined, true);
               } else {
                 Alert.alert('Error', response.message || 'Failed to cancel booking');
               }
